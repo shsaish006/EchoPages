@@ -47,7 +47,7 @@ Developed EchoPages, an AI-driven platform that enables real-time voice interact
 
 - **[Vapi](https://jsm.dev/books-vapi)** is a specialized Voice AI platform that enables real-time, low-latency conversational audio. It serves as the primary engine for Bookified, allowing users to have seamless, back-and-forth verbal interactions with their uploaded content.
 
-## <a name="features">🔋 Features</a>
+## <a name="features"> Features</a>
 
 **PDF Upload & Ingestion**: Seamlessly upload PDF books with automated text extraction, intelligent chunking, and high-dimensional embeddings for precise context retrieval.
 
