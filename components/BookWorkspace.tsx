@@ -181,7 +181,7 @@ export default function BookWorkspace({ book: initialBook }: { book: IBook }) {
                 <div className="flex gap-5 items-center">
                     <div className="relative w-16 h-24 rounded-lg overflow-hidden border border-[#cbd5e1] flex-shrink-0 shadow-sm">
                         <Image
-                            src={book.coverURL || "/images/book-placeholder.png"}
+                            src={book.coverURL || "/assets/book.png"}
                             alt={book.title}
                             fill
                             className="object-cover"
