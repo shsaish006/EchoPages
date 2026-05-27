@@ -1,175 +1,188 @@
-<div align="center">
-  <br />
-    <a href="https://youtu.be/NiwawEe92Co" target="_blank">
-      <img src="public/readme/readme-hero-new.webp" alt="Project Banner">
-    </a>
-  <br />
+# EchoPages: Intelligent AI Book Companion
 
-  <div>
-<img src="https://img.shields.io/badge/-Next.js_16-000000?style=for-the-badge&logo=Next.js&logoColor=white" />
-<img src="https://img.shields.io/badge/-ElevenLabs-FFFFFF?style=for-the-badge&logo=ElevenLabs&logoColor=black" />
-<img src="https://img.shields.io/badge/-Vapi-62F6B5?style=for-the-badge&logo=Vapi&logoColor=black" />
-<img src="https://img.shields.io/badge/-Clerk-6C47FF?style=for-the-badge&logo=Clerk&logoColor=white" /><br/>
-<img src="https://img.shields.io/badge/-MongoDB-47A248?style=for-the-badge&logo=MongoDB&logoColor=white" />
-<img src="https://img.shields.io/badge/-Typescript-3178C6?style=for-the-badge&logo=Typescript&logoColor=white" />
-<img src="https://img.shields.io/badge/-Tailwind-06B6D4?style=for-the-badge&logo=Tailwind-CSS&logoColor=white" />
-<img src="https://img.shields.io/badge/-Shadcn/UI-000000?style=for-the-badge&logo=shadcnui&logoColor=white" />
+EchoPages is a state-of-the-art interactive AI reading and conversational suite built on the Next.js App Router, MongoDB, Vapi, ElevenLabs, and Google Gemini. The platform converts uploaded PDF documents into structured digital databases, enabling users to engage in either low-latency, back-and-forth verbal conversations or precision text-based discussions with their books. 
 
-  </div>
+Every AI interaction is fully grounded in the book's indexed contents using Retrieval-Augmented Generation (RAG), complete with interactive source citations referencing exact page numbers from the original text.
 
-  <h3 align="center">AI Book Companion | Vapi, ElevenLabs</h3>
+---
 
-   <div align="center">
-     Build this project step by step with our detailed tutorial on <a href="https://www.youtube.com/watch?v=XUkNR-JfHwo" target="_blank"><b>JavaScript Mastery</b></a> YouTube. Join the JSM family!
-    </div>
-</div>
+## System Architecture and Theory of Operation
 
-## 📋 <a name="table">Table of Contents</a>
+### 1. Document Ingestion and Chunking Strategy
+Upon uploading a PDF document, the platform performs client-side extraction to offload heavy processing from serverless functions. 
+- **Text Extraction**: The application leverages `pdfjs-dist` to parse individual page layout objects and aggregate raw character text chronologically.
+- **Overlapping Semantic Segmentation**: The raw text is tokenized into overlapping segments of approximately 500 words, with a 50-word sliding window overlap. This sliding overlap is crucial for maintaining semantic context across boundary regions.
+- **Vector-less Search Indexing**: The parsed segments are saved to MongoDB as independent `BookSegment` documents, featuring compound indexes on `bookId` and `segmentIndex`, alongside a MongoDB full-text index on the `content` field.
 
-1. ✨ [Introduction](#introduction)
-2. ⚙️ [Tech Stack](#tech-stack)
-3. 🔋 [Features](#features)
-4. 🤸 [Quick Start](#quick-start)
-5. 🔗 [Assets](#links)
-6. 🚀 [More](#more)
+### 2. Retrieval-Augmented Generation (RAG) Flow
+When a user submits a textual or voice query:
+- **Retrieval Phase**: A full-text database query matching search terms is executed with a regex-matching fallback. The top 5 most relevant segments are selected.
+- **Context Synthesis**: The content of the retrieved segments is injected into a strict system prompt containing the title, author, and retrieved segments mapped to their respective page numbers.
+- **Generation Phase**: The context-heavy prompt is processed by the Google Gemini 1.5 Flash API. The model is constrained to generate answers exclusively from the retrieved context, returning precise markdown output containing page citations (e.g., `[Page 4]`).
+- **Interactive Highlighting**: The frontend parses the citations out of the AI response and displays clickable references that load the exact underlying text segment into a dedicated viewport.
 
-## 🚨 Tutorial
+### 3. Real-Time Voice Synthesis and Conversation Lifecycle
+For auditory sessions:
+- The `@vapi-ai/web` SDK establishes a WebRTC connection with a low-latency voice model gateway.
+- Vapi acts as the conversational orchestrator, receiving speech from the user, generating live transcript notifications, and hitting EchoPages' server routes `/api/vapi/search-book` dynamically as an AI Tool Call (function calling) to retrieve book facts.
+- High-fidelity natural voice output is generated on the fly via ElevenLabs, utilizing custom voice personas.
 
-This repository contains the code corresponding to an in-depth tutorial available on our YouTube channel, <a href="https://www.youtube.com/@javascriptmastery/videos" target="_blank"><b>JavaScript Mastery</b></a>.
+---
 
-If you prefer visual learning, this is the perfect resource for you. Follow our tutorial to learn how to build projects like these step-by-step in a beginner-friendly manner!
+## Technical Specifications and Schemas
 
-<a href="https://youtu.be/NiwawEe92Co" target="_blank"><img src="https://github.com/sujatagunale/EasyRead/assets/151519281/1736fca5-a031-4854-8c09-bc110e3bc16d" /></a>
+### Database Schemas (Mongoose)
 
-## <a name="introduction">✨ Introduction</a>
-
-Bookified is an AI-powered platform that lets you have real-time voice conversations with your books. Built with Next.js 16, Vapi, and MongoDB, it transforms PDFs into interactive entities using natural voice synthesis. Choose from custom ElevenLabs personas to chat with your library, request summaries, and view live transcripts—all wrapped in a sleek Shadcn UI with Clerk authentication. 
-
-If you're getting started and need assistance or face any bugs, join our active Discord community with over **50k+** members. It's a place where people help each other out.
-
-<a href="https://discord.com/invite/n6EdbFJ" target="_blank"><img src="https://github.com/sujatagunale/EasyRead/assets/151519281/618f4872-1e10-42da-8213-1d69e486d02e" /></a>
-
-## <a name="tech-stack">⚙️ Tech Stack</a>
-
-- **[Clerk](https://jsm.dev/books-clerk)** is a comprehensive user management and authentication platform. It provides secure, pre-built components for email and social logins, enabling seamless session management and protected routes with minimal configuration.
-
-- **[CodeRabbit](https://jsm.dev/books-coderabbit)** is an AI-powered code review platform that provides contextual, line-by-line feedback on pull requests. It automates the review process by identifying bugs, suggesting optimizations, and ensuring coding standards are met, significantly reducing the manual effort for developers and improving code quality.
-
-- **[ElevenLabs](https://elevenlabs.io/docs)** is an advanced AI audio platform providing lifelike text-to-speech. It powers the voice previews in Bookified, allowing users to hear and select from a variety of natural-sounding AI personas before starting a conversation.
-
-- **[MongoDB](https://www.mongodb.com/docs/)** is a flexible, document-based NoSQL database designed for scalability and developer ease. Combined with Mongoose, it serves as the core storage for user libraries, book metadata, and conversation transcripts.
-
-- **[Next.js](https://nextjs.org/docs)** is a powerful React framework for building full-stack web applications. It handles the core application logic, server-side rendering, and API routes, enabling a fast and responsive interface for the Bookified platform.
-
-- **[Shadcn UI](https://ui.shadcn.com/)** is a collection of re-usable, accessible components built with Tailwind CSS and Radix UI. It allows for the creation of a clean, modular, and professional-grade user interface that is easy to customize and theme.
-
-- **[TypeScript](https://www.typescriptlang.org/)** is a superset of JavaScript that adds static typing, providing better tooling, code quality, and error detection. It ensures the application remains maintainable and robust as the codebase scales.
-
-- **[Vapi](https://jsm.dev/books-vapi)** is a specialized Voice AI platform that enables real-time, low-latency conversational audio. It serves as the primary engine for Bookified, allowing users to have seamless, back-and-forth verbal interactions with their uploaded content.
-
-## <a name="features">🔋 Features</a>
-
-👉 **PDF Upload & Ingestion**: Seamlessly upload PDF books with automated text extraction, intelligent chunking, and high-dimensional embeddings for precise context retrieval.
-
-👉 **Voice-First Conversations**: Engage in natural, real-time voice dialogues with your uploaded books, allowing you to ask questions or explore complex concepts verbally via Vapi.
-
-👉 **AI Voice Personas**: Choose from a variety of distinct AI personalities and hear instant high-fidelity previews powered by ElevenLabs to find the perfect reading companion.
-
-👉 **Smart Summaries & Insights**: Quickly extract the essence of any chapter or request deep-dive summaries, making long-form content more accessible and digestible.
-
-👉 **Session Transcripts**: Keep a complete record of every vocal interaction with auto-generated text transcripts, ensuring you never lose a key insight from your discussions.
-
-👉 **Library Management**: Effortlessly organize and search through your personal uploads or the global collection with a high-performance search interface.
-
-👉 **Auth & Subscription**: Secure user access via email and social login, paired with a robust billing system to manage premium features and platform subscriptions.
-
-And many more, including code architecture and reusability.
-
-## <a name="quick-start">🤸 Quick Start</a>
-
-Follow these steps to set up the project locally on your machine.
-
-**Prerequisites**
-
-Make sure you have the following installed on your machine:
-
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/en)
-- [npm](https://www.npmjs.com/) (Node Package Manager)
-
-**Cloning the Repository**
-
-```bash
-git clone https://github.com/adrianhajdin/jsm_bookified.git
-cd jsm_bookified
+#### 1. Book Schema (`Book`)
+Stores the master metadata for uploaded books.
+```typescript
+{
+  clerkId: { type: String, required: true },
+  title: { type: String, required: true },
+  slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  author: { type: String, required: true },
+  persona: { type: String },
+  fileURL: { type: String, required: true },
+  fileBlobKey: { type: String, required: true },
+  coverURL: { type: String },
+  coverBlobKey: { type: String },
+  fileSize: { type: Number, required: true },
+  totalSegments: { type: Number, default: 0 },
+  summary: {
+    type: {
+      executiveSummary: { type: String, required: true },
+      coreConcepts: [{ type: String }],
+      targetAudience: { type: String },
+      suggestedQuestions: [{ type: String }],
+    },
+    default: null
+  }
+}
 ```
 
-**Installation**
+#### 2. Book Segment Schema (`BookSegment`)
+Stores the chunked contents of the parsed PDF.
+```typescript
+{
+  clerkId: { type: String, required: true },
+  bookId: { type: Schema.Types.ObjectId, ref: 'Book', required: true, index: true },
+  content: { type: String, required: true },
+  segmentIndex: { type: Number, required: true, index: true },
+  pageNumber: { type: Number, index: true },
+  wordCount: { type: Number, required: true }
+}
+```
+*Note: Includes a compound index on `{ bookId: 1, segmentIndex: 1 }` and a full-text search index on `{ content: 'text' }`.*
 
-Install the project dependencies using npm:
-
-```bash
-npm install
+#### 3. Voice Session Schema (`VoiceSession`)
+Tracks the user's active auditory study sessions to enforce pricing limit parameters and populate historical learning charts.
+```typescript
+{
+  clerkId: { type: String, required: true, index: true },
+  bookId: { type: Schema.Types.ObjectId, ref: 'Book', required: true },
+  startedAt: { type: Date, required: true, default: Date.now },
+  endedAt: { type: Date },
+  durationSeconds: { type: Number, default: 0, required: true },
+  billingPeriodStart: { type: Date, required: true, index: true }
+}
 ```
 
-**Set Up Environment Variables**
+---
 
-Create a new file named `.env` in the root of your project and add the following content:
+## API Documentation
+
+### 1. Vapi Tool Integration `/api/vapi/search-book`
+- **Method**: `POST`
+- **Description**: Handles dynamic tool execution requests from the Vapi Voice Engine during conversations. It processes search parameters, runs database-level lookups, and returns combined plain-text segments back to the voice model to construct answers.
+- **Request Format (Vapi Hook)**:
+```json
+{
+  "message": {
+    "toolCalls": [
+      {
+        "id": "call_12345",
+        "function": {
+          "name": "searchBook",
+          "arguments": {
+            "bookId": "64ef89...",
+            "query": "What does the author say about asset management?"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+- **Response Format**:
+```json
+{
+  "results": [
+    {
+      "toolCallId": "call_12345",
+      "result": "Aggregated matching text content representing book segments for grounding speech generation."
+    }
+  ]
+}
+```
+
+---
+
+## Environment Variables and Configuration
+
+To configure the application for local development, create a `.env` file in the root directory:
 
 ```env
+# Application Environment
 NODE_ENV='development'
-NEXT_PUBLIC_BASE_URL=
+NEXT_PUBLIC_BASE_URL='http://localhost:3000'
 
-# CLERK
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/
-NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/
+# Authentication (Clerk)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY='your_clerk_publishable_key'
+CLERK_SECRET_KEY='your_clerk_secret_key'
+NEXT_PUBLIC_CLERK_SIGN_IN_URL='/sign-in'
+NEXT_PUBLIC_CLERK_SIGN_UP_URL='/sign-up'
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL='/'
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL='/'
 
-# VERCEL BLOB
-BLOB_READ_WRITE_TOKEN=
+# Blob Storage (Vercel Blob)
+BLOB_READ_WRITE_TOKEN='your_vercel_blob_read_write_token'
 
-# MONGODB
-MONGODB_URI=
+# Database Configuration (MongoDB)
+MONGODB_URI='your_mongodb_connection_uri'
 
-# VAPI
-NEXT_PUBLIC_VAPI_API_KEY=
-VAPI_SERVER_SECRET=
+# Voice AI Engine (Vapi)
+NEXT_PUBLIC_VAPI_API_KEY='your_vapi_api_key'
+VAPI_SERVER_SECRET='your_vapi_server_secret'
 
-# Google Gemini API for embeddings
-GOOGLE_GEMINI_API_KEY=
+# LLM Grounding (Google Gemini API)
+GOOGLE_GEMINI_API_KEY='your_gemini_api_key'
 
-# ELEVENLABS
-ELEVENLABS_API_KEY=
+# Voice Synthesis (ElevenLabs)
+ELEVENLABS_API_KEY='your_elevenlabs_api_key'
 ```
 
-Replace the placeholder values with your real credentials. You can get these by signing up at: [**Clerk**](https://clerk.com), [**Vercel**](https://vercel.com), [**MongoDB**](https://www.mongodb.com), [**Vapi**](https://vapi.ai), [**Google AI Studio**](https://aistudio.google.com), [**ElevenLabs**](https://elevenlabs.io).
+---
 
-**Running the Project**
+## Getting Started
 
-```bash
-npm run dev
-```
+### Installation Workflow
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/shsaish006/EchoPages.git
+   cd EchoPages/jsm_bookified
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the project.
+2. Install runtime and development dependencies:
+   ```bash
+   npm install
+   ```
 
-## <a name="links">🔗 Assets</a>
+3. Initialize local database indexes and run the Next.js development server:
+   ```bash
+   npm run dev
+   ```
 
-Assets and snippets used in the project can be found in the **[video kit](https://jsmastery.com/video-kit/8127ec28-61db-4295-a85b-c649df6ee408)**.
-
-<a href="https://jsmastery.com/video-kit/8127ec28-61db-4295-a85b-c649df6ee408" target="_blank">
-  <img src="public/readme/readme-videokit.webp" alt="Video Kit Banner">
-</a>
-
-## <a name="more">🚀 More</a>
-
-**Advance your skills with Next.js Pro Course**
-
-Enjoyed creating this project? Dive deeper into our PRO courses for a richer learning adventure. They're packed with
-detailed explanations, cool features, and exercises to boost your skills. Give it a go!
-
-<a href="https://jsm.dev/books-jsm" target="_blank">
-  <img src="public/readme/readme-jsmpro.webp" alt="Project Banner">
-</a>
+4. Compile and validate the production bundle for correctness:
+   ```bash
+   npm run build
+   ```

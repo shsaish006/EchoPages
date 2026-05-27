@@ -9,6 +9,13 @@ import { UploadSchema } from '@/lib/zod';
 // DATABASE MODELS
 // ============================================
 
+export interface IBookSummary {
+    executiveSummary: string;
+    coreConcepts: string[];
+    targetAudience: string;
+    suggestedQuestions: string[];
+}
+
 export interface IBook extends Document {
     _id: string;
     clerkId: string;
@@ -22,6 +29,7 @@ export interface IBook extends Document {
     coverBlobKey?: string;
     fileSize: number;
     totalSegments: number;
+    summary?: IBookSummary | null;
     createdAt: Date;
     updatedAt: Date;
 }
