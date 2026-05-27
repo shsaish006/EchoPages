@@ -95,10 +95,7 @@ export async function parsePDFFile(file: File) {
     const pdfjsLib = await import('pdfjs-dist');
 
     if (typeof window !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-          'pdfjs-dist/build/pdf.worker.min.mjs',
-          import.meta.url,
-      ).toString();
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs`;
     }
 
     // Read file as array buffer
@@ -108,26 +105,29 @@ export async function parsePDFFile(file: File) {
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdfDocument = await loadingTask.promise;
 
-    // Render first page as cover image
-    const firstPage = await pdfDocument.getPage(1);
-    const viewport = firstPage.getViewport({ scale: 2 }); // 2x scale for better quality
+    // Render first page as cover image safely
+    let coverDataURL: string | null = null;
+    try {
+      const firstPage = await pdfDocument.getPage(1);
+      const viewport = firstPage.getViewport({ scale: 2 }); // 2x scale for better quality
 
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const context = canvas.getContext('2d');
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const context = canvas.getContext('2d');
 
-    if (!context) {
-      throw new Error('Could not get canvas context');
+      if (context) {
+        await firstPage.render({
+          canvasContext: context,
+          viewport: viewport,
+        }).promise;
+
+        // Convert canvas to data URL
+        coverDataURL = canvas.toDataURL('image/png');
+      }
+    } catch (coverError) {
+      console.warn('Failed to render PDF cover page:', coverError);
     }
-
-    await firstPage.render({
-      canvasContext: context,
-      viewport: viewport,
-    }).promise;
-
-    // Convert canvas to data URL
-    const coverDataURL = canvas.toDataURL('image/png');
 
     // Extract text from all pages
     let fullText = '';

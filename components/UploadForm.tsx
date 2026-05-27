@@ -86,7 +86,7 @@ const UploadForm = () => {
                     contentType: coverFile.type
                 });
                 coverUrl = uploadedCoverBlob.url;
-            } else {
+            } else if (parsedPDF.cover) {
                 const response = await fetch(parsedPDF.cover)
                 const blob = await response.blob();
 
@@ -96,6 +96,8 @@ const UploadForm = () => {
                     contentType: 'image/png'
                 });
                 coverUrl = uploadedCoverBlob.url;
+            } else {
+                coverUrl = "/assets/book.png";
             }
 
             const book = await createBook({
